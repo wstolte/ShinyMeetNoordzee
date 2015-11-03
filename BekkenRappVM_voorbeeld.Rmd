@@ -1,0 +1,101 @@
+---
+title: "Noordzee - testversie"
+author: "Willem Stolte"
+date: "Friday, May 22, 2015"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    theme: united
+    toc: yes
+  word_document: default
+---
+
+```{r load_packages, include=FALSE}
+library(ggplot2)
+library(plyr)
+library(pander)
+```
+
+```{r, echo = F}
+load(file = "DATA/MWTL_Noordzee_bewerkt.Rdata")
+mystyle <- list(theme_bw(), 
+                theme(plot.title = element_text(size = rel(1.2), color = "purple")))
+```
+
+
+
+#Evaluatie
+
+```{r, echo = F}
+substance <- "opgelost fosfaat"
+location <- "Noordwijk 10 km uit de kust"
+```
+##`r substance`
+
+De concentratie `r substance` op station `r location` is veranderd blablabla
+
+```{r, echo = F}
+subdf = subset(rws_dat, rws_dat$variable == substance &
+                 rws_dat$locatie == location)
+subdfvoor = subset(subdf, subdf$year <= 1998)
+subdfna = subset(subdf, subdf$year > 1998)
+
+pl <- ggplot(subdf, aes(datetime, waarde))
+pl <- pl + geom_point(aes(), color = "seagreen4", alpha = 0.5)
+pl <- pl + geom_smooth(aes(), method='loess', span = 0.3, size = 1)
+pl <- pl + ggtitle(paste(substance, location)) + mystyle
+print(pl)
+```
+
+De gemiddelde concentratie `r substance` over de hele periode was `r round(mean(subdf$waarde, na.rm = T), 3)`. Voor 1998 was het gemiddelde `r round(mean(subdfvoor$waarde, na.rm = T), 3)`, na 1998 was het gemiddelde `r round(mean(subdfna$waarde, na.rm = T), 3)`. Fosfaat nam toe tot ongeveer 1980.
+```{r, echo = F}
+pl <- ggplot(subset(subdf, subdf$year <= 1980), aes(datetime, waarde))
+pl <- pl + geom_point(aes(), color = "seagreen4", alpha = 0.5)
+pl <- pl + geom_smooth(aes(), method='lm', 
+                       formula = y ~ x+I(cos(2*pi*x/31622400))+I(sin(2*pi*x/31622400)), 
+                       size = 0.7, alpha = 0.3, n = 1000)
+pl <- pl + ggtitle(paste(substance, location)) + mystyle
+print(pl)
+```
+
+Na 1980 nam fosfaat weer af
+
+```{r, echo = F}
+pl <- ggplot(subset(subdf, subdf$year > 1980 & subdf$year < 1999), aes(datetime, waarde))
+pl <- pl + geom_point(aes(), color = "seagreen4", alpha = 0.5)
+pl <- pl + geom_smooth(aes(), method='lm', 
+                       formula = y ~ x+I(cos(2*pi*x/31622400))+I(sin(2*pi*x/31622400)), 
+                       size = 0.7, alpha = 0.3, n = 1000)
+pl <- pl + ggtitle(paste(substance, location)) + mystyle
+print(pl)
+```
+
+
+###`r substance` per jaar
+
+Tabel met `r substance` na 2000. 
+```{r, echo = F, results = 'asis'}
+panderOptions("table.style", "rmarkdown")  # Used in conjunction with the chunk setting results='asis'
+pander(ddply(subdfna, .(year), summarize, mean = round(mean(waarde),4)))
+```
+
+
+## Wat gebeurt er met zuurstof? 
+
+```{r, echo=FALSE, fig.width=6, fig.height=5}
+rws_O2Perc <- filter(rws_dat, waarnemingssoort %in% 
+                       c("Percentage zuurstof in % in oppervlaktewater",
+                         "Zuurstof in mg/l in oppervlaktewater", 
+                         "Temperatuur in oC in oppervlaktewater")
+                     &
+                       year > 2008
+)
+plot <- ggplot(data = rws_O2Perc, aes(x = datetime, y = waarde)) + 
+  geom_point(aes(color = locatie), size = 1, alpha = 0.7) + 
+  geom_smooth(aes(color = locatie), method='lm', formula = y ~ x+I(cos(2*pi*x/31622400))+I(sin(2*pi*x/31622400))) +
+  facet_grid(waarnemingssoort ~ ., scales = "free") +
+  guides(color=FALSE)
+plot
+```
+

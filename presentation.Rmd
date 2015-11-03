@@ -31,7 +31,7 @@ print(ddply(rws_dat, .(locatie), summarize, startjaar = format(min(datetime), fo
 ```{r, echo=FALSE}
 inputPanel(selectInput("location", "Location:", selected = "Terschelling 10 km uit de kust", 
                        choices = levels(rws_dat$locatie)),
-           selectInput("substance", "Substance:", selected = "opgelost fosfaat", 
+           selectInput("substance", "Substance:", selected = "zuurstof", 
                        choices = levels(as.factor(rws_dat$variable))),
            sliderInput("lspan", "Loess span", value = 0.3,
                        min = 0, max = 1, 0.7, step = 0.05, sep = "")
@@ -50,7 +50,7 @@ pl +
 
 ## Wat gebeurt er met zuurstof? {.smaller}
 
-```{r, echo=FALSE, fig.width=6, fig.height=5}
+```{r, echo=FALSE, fig.width=4, fig.height=6}
 rws_O2Perc <- filter(rws_dat, waarnemingssoort %in% 
                        c("Percentage zuurstof in % in oppervlaktewater",
                          "Zuurstof in mg/l in oppervlaktewater", 
@@ -61,7 +61,7 @@ rws_O2Perc <- filter(rws_dat, waarnemingssoort %in%
 plot <- ggplot(data = rws_O2Perc, aes(x = datetime, y = waarde)) + 
   geom_point(aes(color = locatie), size = 1, alpha = 0.7) + 
   geom_smooth(aes(), method='lm', formula = y ~ x+I(cos(2*pi*x/31622400))+I(sin(2*pi*x/31622400))) +
-  facet_grid(waarnemingssoort ~ ., scales = "free") +
+  facet_grid(variable ~ ., scales = "free") +
   guides(color=FALSE)
 plot
 ```
